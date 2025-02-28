@@ -1,6 +1,7 @@
 include { FILTER_LOW_COMPLEXITY } from '../modules/local/ont_lc_filter/filter_low_complexity'
 include { SUBSET_HIGH_COMPLEXITY } from '../modules/local/seqkit_subset/subset_high_complexity'
 include { FILTLONG } from '../modules/nf-core/filtlong/main'
+include { FILTLONG as FILTLONG_PRELIM } from '../modules/nf-core/filtlong/main'
 
 
 workflow CLEAN_ONT {
@@ -12,8 +13,13 @@ workflow CLEAN_ONT {
         // First, clean low complexity regions
         if (params.do_clean_ont_filter_lc) {
             ch_long_reads = input_reads.map { it -> [it[0], it[2]] }
+            FILTLONG_PRELIM(
+                ch_long_reads.map {
+                    it -> [it[0], [], it[1]]
+                }
+            )
             // TODO: Add a check to see if the image from params exists
-            FILTER_LOW_COMPLEXITY(ch_long_reads)
+            FILTER_LOW_COMPLEXITY(FILTLONG_PRELIM.out.reads)
 
             ch_filter_lc = FILTER_LOW_COMPLEXITY.out.bed
 
